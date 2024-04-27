@@ -20,9 +20,11 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
@@ -38,41 +40,21 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val TAG = "MainActivity"
 
-    @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             FlowsTheme {
                 LaunchedEffect(key1 = Unit) {
-
-                    //We can emit values from onStart, onCompletion also.
+                    /**
+                     * Flows preserves the coroutine context,if you want to change it you need to use flow on
+                     */
                     GlobalScope.launch {
-                        val data: Flow<Int> = producer()
-                        data.onStart {
-                            Log.e(TAG, "onStart: ")
-                        }.onCompletion {
-                            Log.e(TAG, "onCompletion: ")
-                        }.onEach {
-                            Log.e(TAG, "onEach: $it")
-                        }.collect {
-                            Log.e(TAG, "onCreate1: $it")
-                        }
+                        producer()
+                            .flowOn(Dispatchers.IO)
+                            .collect {
+                                Log.e(TAG, "onCreate: $it")
+                            }
                     }
-
-                    //Terminal operators ex: Collector/collect,first/last,toList()
-                    GlobalScope.launch {
-                        val data = producer()
-                        Log.e(TAG, "onCreate: $data.first()")
-                    }
-
-                    //Non terminal operators: map,flatmap,filter
-                    GlobalScope.launch {
-                        val data = producer()
-                        data.map { it * it }.collect {
-                            Log.e(TAG, "onCreateMap: $it" )
-                        }
-                    }
-
                 }
             }
         }
@@ -83,7 +65,10 @@ class MainActivity : ComponentActivity() {
         list.forEach {
             delay(1000)
             emit(it)
+            //throw RuntimeException("Exception occurred") uncomment to check catch with flows
         }
+    }.catch {
+        Log.e(TAG, "producer: ${it.message}")
     }
 }
 

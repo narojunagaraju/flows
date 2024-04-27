@@ -9,7 +9,7 @@ import com.example.flows.ui.theme.FlowsTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
@@ -43,17 +43,16 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun producer(): Flow<Int> {
-        //Shared flow is a kind of hot flow, it will emit the items even if there are no subscribers.
-        // The new subscribers will receive the data from the point of subscription.
-        // We can use replay if we want to give old data to new subscribers.
-        val mutableSharedFlow = MutableSharedFlow<Int>()
+        //State flow is similar to shared flow i.e. it's a hot flow.
+        // It preserves the last emitted values as state.It needs an initial value.
+        val mutableStateFlow = MutableStateFlow(0)
         GlobalScope.launch {
             val list = listOf(1, 2, 3, 4, 5, 6)
             list.forEach {
-                mutableSharedFlow.emit(it)
+                mutableStateFlow.emit(it)
             }
         }
-        return mutableSharedFlow
+        return mutableStateFlow
     }
 }
 

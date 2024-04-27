@@ -4,31 +4,13 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.flows.ui.theme.FlowsTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
 /***
@@ -60,15 +42,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun producer() = flow<Int> { // suspend block, these flows internally creates a coroutine scope
-        val list = listOf(1, 2, 3, 4, 5, 6)
-        list.forEach {
-            delay(1000)
-            emit(it)
-            //throw RuntimeException("Exception occurred") uncomment to check catch with flows
+    private fun producer(): Flow<Int> {
+        //Shared flow is a kind of hot flow, it will emit the items even if there are no subscribers.
+        // The new subscribers will receive the data from the point of subscription.
+        // We can use replay if we want to give old data to new subscribers.
+        val mutableSharedFlow = MutableSharedFlow<Int>()
+        GlobalScope.launch {
+            val list = listOf(1, 2, 3, 4, 5, 6)
+            list.forEach {
+                mutableSharedFlow.emit(it)
+            }
         }
-    }.catch {
-        Log.e(TAG, "producer: ${it.message}")
+        return mutableSharedFlow
     }
 }
 

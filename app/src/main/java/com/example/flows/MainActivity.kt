@@ -11,33 +11,42 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.flows.ui.theme.FlowsTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+
+/***
+ * Channels are hot flows, means they emit data even if there are no consumers. So, it will cause loss of data.
+ * Flows are mostly cold, they can't emit the data until there are consumers.
+ */
+val channel = Channel<Int>()
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             FlowsTheme {
                 // A surface container using the 'background' color from the theme
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Greeting("Android")
-                }
+                producer()
+                consumer()
             }
         }
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    FlowsTheme {
-        Greeting("Android")
+fun producer() {
+    CoroutineScope(Dispatchers.Main).launch {
+        channel.send(1)
+        channel.send(2)
     }
 }
+
+fun consumer() {
+    CoroutineScope(Dispatchers.Main).launch {
+        channel.receive()
+        channel.receive()
+    }
+}
+

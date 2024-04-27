@@ -40,11 +40,17 @@ class MainActivity : ComponentActivity() {
             FlowsTheme {
                 LaunchedEffect(key1 = Unit) {
 
-                    GlobalScope.launch {
+                    val job = GlobalScope.launch {
                         val data: Flow<Int> = producer()
                         data.collect {
                             Log.e(TAG, "onCreate: $it")
                         }
+                    }
+
+                    //There is no direct way to cancel flow, if the coroutine is cancelled automatically corresponding flow is cancelled
+                    GlobalScope.launch {
+                       delay(1500)
+                        job.cancel()
                     }
                 }
             }

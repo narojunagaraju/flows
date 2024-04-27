@@ -21,7 +21,12 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
 /***
@@ -40,19 +45,31 @@ class MainActivity : ComponentActivity() {
             FlowsTheme {
                 LaunchedEffect(key1 = Unit) {
 
+                    //We can emit values from onStart, onCompletion also.
                     GlobalScope.launch {
                         val data: Flow<Int> = producer()
-                        data.collect {
+                        data.onStart {
+                            Log.e(TAG, "onStart: ")
+                        }.onCompletion {
+                            Log.e(TAG, "onCompletion: ")
+                        }.onEach {
+                            Log.e(TAG, "onEach: $it")
+                        }.collect {
                             Log.e(TAG, "onCreate1: $it")
                         }
                     }
 
+                    //Terminal operators ex: Collector/collect,first/last,toList()
+                    GlobalScope.launch {
+                        val data = producer()
+                        Log.e(TAG, "onCreate: $data.first()")
+                    }
 
-                   GlobalScope.launch {
-                        val data: Flow<Int> = producer()
-                        //delay(1000) Even if you uncomment the data won't lost as it is cold flow
-                        data.collect {
-                            Log.e(TAG, "onCreate2: $it")
+                    //Non terminal operators: map,flatmap,filter
+                    GlobalScope.launch {
+                        val data = producer()
+                        data.map { it * it }.collect {
+                            Log.e(TAG, "onCreateMap: $it" )
                         }
                     }
 
